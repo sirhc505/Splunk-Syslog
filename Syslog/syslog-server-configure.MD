@@ -20,7 +20,7 @@
     - [Confirm MD5](#confirm-md5)
     - [Install Agent](#install-agent)
     - [Create SystemD Service](#create-systemd-service)
-    - [Configure Fowarder](#configure-fowarder)
+    - [Configure Forwarder](#configure-forwarder)
     - [Enable and Start Splunk Agent](#enable-and-start-splunk-agent)
 
 ## Configure GIT Repos
@@ -371,7 +371,7 @@ WantedBy=multi-user.target" > /etc/systemd/system/SplunkForwarder.service
 chown splunk.splunk /opt/splunkforwarder/* -R
 ```
 
-### Configure Fowarder
+### Configure Forwarder
 
 Create the ```deploymentclient.conf``` file so the agent knows where to get its license and deployment files.
 
