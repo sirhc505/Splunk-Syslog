@@ -1,5 +1,28 @@
 # Syslog Server Configuration
 
+- [Syslog Server Configuration](#syslog-server-configuration)
+  - [Configure GIT Repos](#configure-git-repos)
+  - [Configure rsyslog](#configure-rsyslog)
+    - [Install rsyslog](#install-rsyslog)
+    - [Add server key to Stash](#add-server-key-to-stash)
+    - [Setup Sync Folders](#setup-sync-folders)
+    - [Clone Repos](#clone-repos)
+    - [Setup Syslog Config Files](#setup-syslog-config-files)
+    - [First time rsyslogd.conf](#first-time-rsyslogdconf)
+    - [Setup Logrotate](#setup-logrotate)
+    - [Make service specific directories](#make-service-specific-directories)
+    - [Enable and Start rsyslogd](#enable-and-start-rsyslogd)
+  - [Configure Configuration Updates](#configure-configuration-updates)
+    - [Check Scripts](#check-scripts)
+    - [Setup Crontab](#setup-crontab)
+  - [Install Splunk Forwarder](#install-splunk-forwarder)
+    - [Download Agent](#download-agent)
+    - [Confirm MD5](#confirm-md5)
+    - [Install Agent](#install-agent)
+    - [Create SystemD Service](#create-systemd-service)
+    - [Configure Fowarder](#configure-fowarder)
+    - [Enable and Start Splunk Agent](#enable-and-start-splunk-agent)
+
 ## Configure GIT Repos
 
 Since we are going to have multiple syslog servers we are going to want an easy way to sync configurations between servers.
