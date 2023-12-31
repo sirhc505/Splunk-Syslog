@@ -1,6 +1,7 @@
 # Syslog Server Configuration
 
 - [Syslog Server Configuration](#syslog-server-configuration)
+  - [Assumptions](#assumptions)
   - [Configure GIT Repos](#configure-git-repos)
   - [Configure rsyslog](#configure-rsyslog)
     - [Install rsyslog](#install-rsyslog)
@@ -22,6 +23,13 @@
     - [Create SystemD Service](#create-systemd-service)
     - [Configure Forwarder](#configure-forwarder)
     - [Enable and Start Splunk Agent](#enable-and-start-splunk-agent)
+
+## Assumptions
+
+- You have a fully functioning Splunk Deployment Server
+- You know what inputs will be on the Syslog Server and you have the TAs ready with ```inputs.conf``` already configured
+- The server class for the Syslog Servers is already set to go.
+- You have the new indexes on the indexing cluster already configured
 
 ## Configure GIT Repos
 

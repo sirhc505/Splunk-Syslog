@@ -55,7 +55,7 @@ For this document our company domain is ```mydomain.com``` and all examples will
 
 ### Server Naming
 
-For the purposes of this document we are going to assume you have to different data centers dc-east (for Datacenter East) and dc-west that will be identified as dce and dcw. So for each data center we would name them ```syslog-dce-0.ad.mydomain.com``` and ```syslog-dcw-0.ad.mydomain.com```. If we wanted to add another pair in each datacenter then we would incriment the counter and the names would be ```syslog-dce-1.ad.mydomain.com``` and ```syslog-dcw-1.ad.mydomain.com```
+For the purposes of this document we are going to assume you have to different data centers dc-east (for Datacenter East) and dc-west that will be identified as dce and dcw. So for each data center we would name them ```syslog-dce-0.ad.mydomain.com``` and ```syslog-dcw-0.ad.mydomain.com```. If we wanted to add another pair in each datacenter then we would increment the counter and the names would be ```syslog-dce-1.ad.mydomain.com``` and ```syslog-dcw-1.ad.mydomain.com```
 
 ### Zabbix
 
@@ -99,7 +99,7 @@ If you are going to add any cron jobs you will need to reboot at this time.
 
 ### Validate NTP - Chrony
 
-Make sure that the pool for the chronyd is set to your organizations locoal time server. If not then change it the ```/etc/chrony.conf``` file:
+Make sure that the pool for the chronyd is set to your organizations local time server. If not then change it the ```/etc/chrony.conf``` file:
 
 ```conf
 pool time.mydomain.com
@@ -451,7 +451,7 @@ In order to use Duo with SSHD we will need to make some changes to its configura
 ```sh
 sed -i s/\#UseDNS\ yes/UseDNS\ no/g /etc/ssh/sshd_config
 sed -i s/ChallengeResponseAuthentication\ no/ChallengeResponseAuthentication\ yes/g /etc/ssh/sshd_config
-sed -i s/\#PermitRootLogin\ yes/PermitRootLogin\ yes/g /etc/ssh/sshd_config
+sed -i s/\PermitRootLogin\ yes/#PermitRootLogin\ yes/g /etc/ssh/sshd_config
 
 systemctl restart sshd
 ```

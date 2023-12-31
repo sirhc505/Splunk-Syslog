@@ -8,4 +8,26 @@ The [Server Build Guide](Syslog/syslog-server-build.MD) contains a step-by-step 
 
 The [Server Configuration Guide](Syslog/syslog-server-configure.MD) contains a step-by-step guide to setup rsyslog in a way that is IMO easily maintained across multiple nodes.
 
+```mermaid
+graph LR
+
+
+A[Alt Syslog Port Supported] --> VIP[Splunk Syslog VIP]
+    VIP --> SA[Splunk HF Node 1]
+    VIP --> SB[Splunk HF Node 2]
+    SA --> IC[Indexing Cluster]
+    SB --> IC
+
+B[Only 514/udp Syslog Supported] --> VIPB[Syslog VIP]
+    VIPB --> ASA[Syslog Node 1 w/Univ. Fowarder]
+    VIPB --> ASB[Syslog Node 2 w/Univ. Fowarder]
+    ASA --> IC
+    ASB --> IC
+
+```
+
+
+
+
+
 ## Splunk Heavy Forwarder Configuration
