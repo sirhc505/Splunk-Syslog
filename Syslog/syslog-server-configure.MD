@@ -4,15 +4,18 @@
   - [Assumptions](#assumptions)
   - [Configure GIT Repos](#configure-git-repos)
   - [Configure rsyslog](#configure-rsyslog)
+    - [Use GIT to sync between syslog servers](#use-git-to-sync-between-syslog-servers)
+      - [Add server key to Stash](#add-server-key-to-stash)
+      - [Setup Sync Folders](#setup-sync-folders)
+      - [Clone Repos](#clone-repos)
     - [Install rsyslog](#install-rsyslog)
-    - [Add server key to Stash](#add-server-key-to-stash)
-    - [Setup Sync Folders](#setup-sync-folders)
-    - [Clone Repos](#clone-repos)
-    - [Setup Syslog Config Files](#setup-syslog-config-files)
-    - [First time rsyslogd.conf](#first-time-rsyslogdconf)
+      - [Setup Syslog Config Files](#setup-syslog-config-files)
+      - [First time rsyslogd.conf](#first-time-rsyslogdconf)
+      - [Make service specific directories](#make-service-specific-directories)
+      - [Enable and Start rsyslogd](#enable-and-start-rsyslogd)
     - [Setup Logrotate](#setup-logrotate)
-    - [Make service specific directories](#make-service-specific-directories)
-    - [Enable and Start rsyslogd](#enable-and-start-rsyslogd)
+      - [logrodated Configuration](#logrodated-configuration)
+      - [logrotated Service files](#logrotated-service-files)
   - [Configure Configuration Updates](#configure-configuration-updates)
     - [Check Scripts](#check-scripts)
     - [Setup Crontab](#setup-crontab)
@@ -45,23 +48,22 @@ There are a few ways to slide it. In theory you could do everything with a singl
 
 ## Configure rsyslog
 
-### Install rsyslog
+### Use GIT to sync between syslog servers
 
-```sh
-dnf -y install rsyslog
-```
+#### Add server key to Stash
 
-### Add server key to Stash
+You will likely need to add your SSH Keys to the Git Repositories that hold:
 
-Go to [Stash RSyslog Repo](https://stash.uconn.edu/plugins/servlet/ssh/projects/SR/keys)
-
-Click Add Key
-
-Set Read / Write
+- Scripts
+- Syslog Config
+- Syslog Service Config files
+- Logrotate service config files
 
 Add contents of ```/root/.ssh/id_rsa.pub```
 
-### Setup Sync Folders
+If you are starting from scratch, create the repos and sync them from empty so the backup scripts can download/upload and changes.
+
+#### Setup Sync Folders
 
 Create the necessary directories
 
@@ -71,7 +73,9 @@ mkdir syslog
 cd /opt/syslog
 ```
 
-### Clone Repos
+#### Clone Repos
+
+You will obviously need to update the git URLS for your company
 
 ```sh
 git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/logrotate.git
@@ -80,7 +84,15 @@ git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/syslog_conf.git
 git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/scripts.git
 ```
 
-### Setup Syslog Config Files
+---
+
+### Install rsyslog
+
+```sh
+dnf -y install rsyslog
+```
+
+#### Setup Syslog Config Files
 
 Now that the repos have been downloaded, the server needs to be pointed to them.
 
@@ -109,7 +121,7 @@ Below is an example of one of the templates. Make note of the ```?JUNIPER```. Yo
 
 Setup global server ```rsyslog.conf``` file
 
-### First time rsyslogd.conf 
+#### First time rsyslogd.conf 
 
 
 ```ini
@@ -141,7 +153,7 @@ $InputTCPServerRun 514
 
 $template JUNIPER,"/var/log/juniper/%HOSTNAME%"
 $template SEC_NAS,"/var/log/nas/%HOSTNAME%"
-$template FIREWALL,"/var/log/firewall/%HOSTNAME%"
+$template FIREWALL,"/var/log/firepower/%HOSTNAME%"
 $template UITS_UCS,"/var/log/ucs/%HOSTNAME%"
 $template TACACS,"/var/log/tacacs/%HOSTNAME%"
 $template VPN,"/var/log/vpn/%HOSTNAME%"
@@ -160,13 +172,34 @@ $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
 $IncludeConfig /etc/rsyslog.d/*.conf
 ```
 
+Run the following commands:
 
 ```sh
 mv rsyslog.conf rsyslog.install
 ln -s /opt/syslog/syslog_conf/rsyslog.conf
 ```
 
+#### Make service specific directories
+
+The following commands will pull all of the template directories out of the configuration file and create them.
+
+```sh
+cat /etc/rsyslog.conf |grep template| cut -f 2 -d \"| cut -f 1 -d \%|uniq >> /tmp/dirstocreate.txt
+mkdir -p `cat /tmp/dirstocreate.txt`
+```
+
+#### Enable and Start rsyslogd
+
+```sh
+systemctl enable rsyslog
+systemctl start rsyslog
+```
+
+---
+
 ### Setup Logrotate
+
+#### logrodated Configuration
 
 Edit file ```/etc/logrotate.conf```
 
@@ -205,20 +238,32 @@ include /opt/syslog/logrotate
 # system-specific logs may be also be configured here.
 ```
 
-### Make service specific directories
+#### logrotated Service files
 
-The following commands will pull all of the template directories out of the configuration file and create them.
+First you will need to link the ```/etc/logrodate.d``` folder to the git repo that you have created in ```/opt/syslog```
 
 ```sh
-cat /etc/rsyslog.conf |grep template| cut -f 2 -d \"| cut -f 1 -d \%|uniq >> /tmp/dirstocreate.txt
-mkdir -p `cat /tmp/dirstocreate.txt`
+mv /etc/logrodate.d /etc/logrodate.d.old
+cd /etc
+ln -s /opt/syslog/logrotate/ logrotate.d
 ```
 
-### Enable and Start rsyslogd
+Then you can place individual service files in that directory.
 
-```sh
-systemctl enable rsyslog
-systemctl start rsyslog
+For example: ```/etc/logrodate.d/firepower```
+
+```
+/var/log/firepower/*.log {
+        size 50M
+        missingok
+        rotate 4
+        nodateext
+        nocompress
+        sharedscripts
+        postrotate
+                /usr/bin/systemctl restart rsyslog.service
+        endscript
+}
 ```
 
 ---
@@ -233,7 +278,7 @@ Make sure that the ```update.sh``` script in ```/opt/syslog/scripts``` is execut
 chmod 755 /opt/syslog/scripts/update.sh
 ```
 
-If this is the first time then you will want to create the script the following scripts
+If this is the first time then you will want to create the script the following scripts. Make sure you update the paths/directories to match your repo directories that were sync'ed via git. 
 
 ***restart.sh***
 
