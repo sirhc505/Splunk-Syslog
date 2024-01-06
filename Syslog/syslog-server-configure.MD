@@ -19,6 +19,17 @@
   - [Configure Configuration Updates](#configure-configuration-updates)
     - [Check Scripts](#check-scripts)
     - [Setup Crontab](#setup-crontab)
+  - [Configure rsyslog cluster member](#configure-rsyslog-cluster-member)
+    - [Use GIT to sync between syslog servers](#use-git-to-sync-between-syslog-servers-1)
+      - [Add server key to Stash](#add-server-key-to-stash-1)
+      - [Setup Sync Folders](#setup-sync-folders-1)
+      - [Clone Repos](#clone-repos-1)
+      - [Install rsyslog](#install-rsyslog-1)
+      - [Setup Syslog Config Files](#setup-syslog-config-files-1)
+      - [Make service specific directories](#make-service-specific-directories-1)
+      - [Enable and Start rsyslogd](#enable-and-start-rsyslogd-1)
+      - [logrotated Service files](#logrotated-service-files-1)
+      - [Setup Crontab](#setup-crontab-1)
   - [Install Splunk Forwarder](#install-splunk-forwarder)
     - [Download Agent](#download-agent)
     - [Confirm MD5](#confirm-md5)
@@ -303,6 +314,10 @@ systemctl rsyslog.service
 
 echo "Giving Git a chance to update.. Waiting 60 seconds."
 sleep 60
+
+# Make sure you update the line below with the proper host name and
+# if you have more than 2 hosts you will need to all of them below
+
 ssh syslog-dcw-0.ad.mycompany.com systemctl restart rsyslog.service
 ```
 
@@ -325,6 +340,7 @@ cd /opt/syslog/syslog_conf; git pull
 echo "Updating Scriptss..."
 cd /opt/syslog/scripts; git pull
 echo `date`
+
 ```
 
 
@@ -338,8 +354,116 @@ crontab -e
 
 ```crontab
 */30 * * * * /usr/sbin/logrotate -v /etc/logrotate.conf &> /var/log/logrotate.log
+```
+
+---
+
+## Configure rsyslog cluster member
+
+This is for the second (and beyond) syslog server. You are going to make all updates on the first server and the other servers will download the configuration updates automatically. 
+
+### Use GIT to sync between syslog servers
+
+#### Add server key to Stash
+
+You will likely need to add your SSH Keys to the Git Repositories that hold:
+
+- Scripts
+- Syslog Config
+- Syslog Service Config files
+- Logrotate service config files
+
+Add contents of ```/root/.ssh/id_rsa.pub```
+
+If you are starting from scratch, create the repos and sync them from empty so the backup scripts can download/upload and changes.
+
+#### Setup Sync Folders
+
+Create the necessary directories
+
+```sh
+cd /opt
+mkdir syslog
+cd /opt/syslog
+```
+
+#### Clone Repos
+
+You will obviously need to update the git URLS for your company
+
+```sh
+git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/logrotate.git
+git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/syslog.git
+git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/syslog_conf.git
+git clone ssh://git@atl-stash.ad.mycompany.com:7999/sr/scripts.git
+```
+
+#### Install rsyslog
+
+```sh
+dnf -y install rsyslog
+```
+
+#### Setup Syslog Config Files
+
+Now that the repos have been downloaded, the server needs to be pointed to them.
+
+Setup system specfic configurations for rsyslog
+
+```sh
+rm -rf /etc/rsyslog.d/
+cd /etc
+ln -s /opt/syslog/syslog
+mv syslog rsyslog.d
+```
+
+Also  the main configuration file
+
+```sh
+mv rsyslog.conf rsyslog.install
+ln -s /opt/syslog/syslog_conf/rsyslog.conf
+```
+
+#### Make service specific directories
+
+The following commands will pull all of the template directories out of the configuration file and create them.
+
+```sh
+cat /etc/rsyslog.conf |grep template| cut -f 2 -d \"| cut -f 1 -d \%|uniq >> /tmp/dirstocreate.txt
+mkdir -p `cat /tmp/dirstocreate.txt`
+```
+
+#### Enable and Start rsyslogd
+
+```sh
+systemctl enable rsyslog
+systemctl start rsyslog
+```
+
+#### logrotated Service files
+
+First you will need to link the ```/etc/logrodate.d``` folder to the git repo that you have created in ```/opt/syslog```
+
+```sh
+mv /etc/logrodate.d /etc/logrodate.d.old
+cd /etc
+ln -s /opt/syslog/logrotate/ logrotate.d
+```
+
+#### Setup Crontab
+
+Setup the crontab to launch logrotate ever 30 minutes and check to updates to the configuration every minute.
+
+```sh
+crontab -e
+```
+
+```crontab
+*/30 * * * * /usr/sbin/logrotate -v /etc/logrotate.conf &> /var/log/logrotate.log
 * * * * * /bin/bash /opt/syslog/scripts/update.sh > /var/log/configupdate.log
 ```
+
+Now the all of the other syslog servers should have the exact same configuration as the master. Just remember to run the update script after every change so the other servers can get the config.
 
 ---
 
