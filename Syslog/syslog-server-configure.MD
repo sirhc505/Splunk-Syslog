@@ -33,7 +33,8 @@
   - [Install Splunk Forwarder](#install-splunk-forwarder)
     - [Download Agent](#download-agent)
     - [Confirm MD5](#confirm-md5)
-    - [Install Agent](#install-agent)
+    - [Install Agent - Download](#install-agent---download)
+    - [Install Agent - Repo](#install-agent---repo)
     - [Create SystemD Service](#create-systemd-service)
     - [Configure Forwarder](#configure-forwarder)
     - [Enable and Start Splunk Agent](#enable-and-start-splunk-agent)
@@ -475,6 +476,8 @@ I am going to make the assumption that you know how to configure the deployment 
 
 Download the installer and its associated MD5 file from [Splunk.com](https://www.splunk.com/en_us/download/universal-forwarder.html).
 
+Ideally you are using something like Satellite so that you can keep the latest version of the UF that an admin can download from the link above. This way all the servers in your environment can get the latest version when they next update. 
+
 ### Confirm MD5
 
 Make sure the rpm you have downloaded form Splunk has not been messed with.
@@ -483,16 +486,26 @@ Make sure the rpm you have downloaded form Splunk has not been messed with.
 md5sum splunkforwarder-RELEASE_VERSION-linux-2.6-x86_64.rpm | awk ' { print $1 } '; cat splunkforwarder-RELEASE_VERSION-linux-2.6-x86_64.rpm.md5 | awk ' { print $4 } '
 ```
 
-### Install Agent
+### Install Agent - Download
 
 Assuming the values are identical. Go ahead and install the agent
 
 ```sh
 rpm -ivh splunkforwarder-RELEASE_VERSION-linux-2.6-x86_64.rpm
-useradd splunk -d /opt/splunkforwarder
 chown splunk.splunk /opt/splunkforwarder
 /opt/splunkforwarder/bin/splunk enable boot-start -u splunk --accept-license --answer-yes --auto-ports --no-prompt
 ```
+
+### Install Agent - Repo
+
+Assuming the values are identical. Go ahead and install the agent
+
+```sh
+dnf -y install splunkforwarder-RELEASE_VERSION-linux-2.6-x86_64.rpm
+chown splunk.splunk /opt/splunkforwarder
+/opt/splunkforwarder/bin/splunk enable boot-start -u splunk --accept-license --answer-yes --auto-ports --no-prompt
+```
+
 
 ### Create SystemD Service
 
