@@ -25,9 +25,3 @@ B[Only 514/udp Syslog Supported] --> VIPB[Syslog VIP]
     ASB --> IC
 
 ```
-
-
-
-
-
-## Splunk Heavy Forwarder Configuration
